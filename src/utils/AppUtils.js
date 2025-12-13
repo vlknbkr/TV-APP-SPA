@@ -12,27 +12,23 @@ async function getAppCoordinates(listContainer, categoryName, appName) {
     const lists = listContainer.locator('[data-testid^="list-item-"]');
 
     const listsCount = await lists.count();
-    console.log("listCount: ", listsCount);
+    console.log("number of features : ", listsCount);
     const targetCategory = categoryName.trim().toLowerCase();
     const targetApp = appName.trim().toLowerCase();
 
     for (let rIndex = 0; rIndex < listsCount; rIndex++) {
         const list = lists.nth(rIndex);
         const label = await list.getAttribute('aria-label');
-        console.log("label: ", label);
 
-        // Check if this is the correct category
         if (label && label.trim().toLowerCase() === targetCategory) {
             const items = list.locator('div[role="listitem"]');
             const itemsCount = await items.count();
-            console.log("itemsCount: ", itemsCount);
+            console.log("items : ", items);
 
             for (let cIndex = 0; cIndex < itemsCount; cIndex++) {
                 const item = items.nth(cIndex);
                 const testId = await item.getAttribute('data-testid');
-                console.log("testId: ", testId);
 
-                // Check if this is the correct app
                 if (testId && testId.trim().toLowerCase() === targetApp) {
                     console.log("Found app: ", targetApp);
                     console.log("rowIndex: ", rIndex);
@@ -42,8 +38,26 @@ async function getAppCoordinates(listContainer, categoryName, appName) {
             }
         }
     }
-
-    return null;
+    return false;
 }
 
-module.exports = { getAppCoordinates };
+async function getAppCoordinatesInFavoriteList(page, appName) {
+    const favoriteList = page.locator('[id^="favourite-apps"]');
+    const lists = favoriteList.locator('[role="listitem"]');
+    const targetApp = appName.trim().toLowerCase();
+    const count = await lists.count();
+
+    for (let colIndex = 0; colIndex < count; colIndex++) {
+        const element = lists.nth(colIndex);
+        const label = await element.getAttribute('aria-label');
+
+        if (label && label.trim().toLowerCase() === targetApp) {
+            console.log("App Found inside favorite List: ", appName);
+            return colIndex;
+        }
+    }
+    return false;
+}
+
+
+module.exports = { getAppCoordinates, getAppCoordinatesInFavoriteList };
