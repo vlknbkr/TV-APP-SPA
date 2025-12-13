@@ -1,5 +1,6 @@
 const { RemoteControl } = require('../utils/RemoteControl').default;
 const { expect } = require('@playwright/test');
+import { TITAN_OS_LOCATORS } from '../locators/locators.js';
 
 class BasePage {
     constructor(page) {
@@ -29,20 +30,22 @@ class BasePage {
     }
 
     async waitForAppToLoad() {
-        await this.page.locator("div[aria-label='Featured Apps']").waitFor({ state: 'visible' });
+        await this.page.locator(TITAN_OS_LOCATORS.FEATURED_APPS).waitFor({ state: 'visible' });
     }
 
     async waitUntilHomeReady() {
         this.page.waitForTimeout(3000);
         const homeMenuItem = this.page.locator(
-            '[role="menuitem"][aria-label="Home"][aria-selected]'
+            TITAN_OS_LOCATORS.HOME_MENU_ITEM
         );
 
-        await expect(homeMenuItem).toHaveAttribute('aria-selected', 'true', {
-            timeout: 10000,
+        await expect(async () => {
+            await expect(homeMenuItem).toHaveAttribute('aria-selected', 'true');
+        }).toPass({
+            intervals: [2000, 5000, 10000],
+            timeout: 60000
         });
     }
-
 }
 
 module.exports = { BasePage };

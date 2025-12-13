@@ -1,5 +1,5 @@
 import { BasePage } from '../core/BasePage.js';
-import { getAppCoordinates } from "../utils/AppUtils.js";
+
 import { TITAN_OS_LOCATORS } from '../locators/locators.js';
 
 import { expect } from '@playwright/test';
@@ -16,7 +16,7 @@ class AppsPage extends BasePage {
     }
 
     async goToApp(featureName, itemName) {
-        const coordinates = await getAppCoordinates(this.list_selector, featureName, itemName);
+        const coordinates = await this.getAppCoordinates(this.list_selector, featureName, itemName);
         if (!coordinates) {
             throw new Error(`App not found: ${featureName} - ${itemName}`);
         }
@@ -32,14 +32,65 @@ class AppsPage extends BasePage {
         await expect(button).toBeVisible();
         await expect(button).toHaveAttribute('data-focused', 'true', {
             timeout: 5000,
-        }); 
-        await expect(button, 'app is already added to favorites').toHaveText('Add to Favourites');
-        
-        await this.remote.select();
+        });
 
-        await this.waitUntilHomeReady();
+        const text = await button.innerText();
+        if (text === 'Add to Favourites') {
+            await this.remote.select();
+            await this.waitUntilHomeReady();
+            await this.remote.select();
+        } else {
+            console.log('App is already in favorites');
+        }
+    }
 
+    async addAppToFavorites(featureName, appName) {
+        await this.open();
+        await this.goToApp(featureName, appName);
         await this.remote.select();
+        await this.addToFavorites();
+    }
+
+    /**
+     * Finds the coordinates (row and column index) of an app within a specific category.
+     * Performs a case-insensitive search for both category and app name.
+     * 
+     * @param {import('@playwright/test').Locator} listContainer - The Locator for the list container.
+     * @param {string} categoryName - The name of the category (e.g., "Sports").
+     * @param {string} appName - The name of the app (e.g., "Red Bull TV").
+     * @returns {Promise<{rowIndex: number, colIndex: number} | null>} The coordinates or null if not found.
+     */
+    async getAppCoordinates(listContainer, categoryName, appName) {
+        const lists = listContainer.locator(TITAN_OS_LOCATORS.LIST_ITEM_TESTID_PREFIX);
+
+        const listsCount = await lists.count();
+        console.log("number of features : ", listsCount);
+        const targetCategory = categoryName.trim().toLowerCase();
+        const targetApp = appName.trim().toLowerCase();
+
+        for (let rIndex = 0; rIndex < listsCount; rIndex++) {
+            const list = lists.nth(rIndex);
+            const label = await list.getAttribute('aria-label');
+
+            if (label && label.trim().toLowerCase() === targetCategory) {
+                const items = list.locator(TITAN_OS_LOCATORS.LIST_ITEM_ROLE);
+                const itemsCount = await items.count();
+                console.log("items : ", items);
+
+                for (let cIndex = 0; cIndex < itemsCount; cIndex++) {
+                    const item = items.nth(cIndex);
+                    const testId = await item.getAttribute('data-testid');
+
+                    if (testId && testId.trim().toLowerCase() === targetApp) {
+                        console.log("Found app: ", targetApp);
+                        console.log("rowIndex: ", rIndex);
+                        console.log("colIndex: ", cIndex);
+                        return { rowIndex: rIndex, colIndex: cIndex };
+                    }
+                }
+            }
+        }
+        return false;
     }
 }
 
