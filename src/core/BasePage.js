@@ -21,9 +21,8 @@ export class BasePage {
      * @param {string} path - The path to append to BASE_URL (e.g., 'apps')
      */
     async goto(path = '') {
-        await this.page.goto(process.env.BASE_URL + path, { waitUntil: 'networkidle' });
-        await this.page.waitForTimeout(2000);
-
+        await this.page.goto(process.env.BASE_URL + path, { waitUntil: 'domcontentloaded' });
+        await this.page.waitForTimeout(4000);
     }
 
     async expectFocused(focusedElement) {

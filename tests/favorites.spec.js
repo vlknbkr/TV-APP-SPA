@@ -7,37 +7,34 @@ test.describe.serial('Favorites Workflow', () => {
     test(`Add ${appData.appName} to favorites`, async ({ appsPage, homePage }) => {
         await homePage.open();
 
-        const appLocator = homePage.getAppLocator(appData.appName);
-        if (await appLocator.isVisible()) {
-            await homePage.deleteApp(appData.appName);
-        }
+        // Ensure precondition
+        await homePage.ensureAppNotInFavorites(appData.appName);
 
+        // Action
         await appsPage.addAppToFavorites(appData.featureName, appData.appName);
 
-        await expect(async () => {
-            await expect(appLocator).toBeVisible()
-        }).toPass({
-            intervals: [1000, 2000, 5000],
-            timeout: 10000
-        });
+        // Assertion
+        await homePage.ensureAppInFavorites(
+            appData.appName,
+            appData.featureName,
+            appsPage
+        );
     });
 
     test(`Remove ${appData.appName} from favorites`, async ({ homePage, appsPage }) => {
         await homePage.open();
 
-        const appLocator = homePage.getAppLocator(appData.appName);
-        if (!await appLocator.isVisible()) {
-            await appsPage.addAppToFavorites(appData.featureName, appData.appName);
-            await homePage.open();
-        }
+        // Ensure precondition
+        await homePage.ensureAppInFavorites(
+            appData.appName,
+            appData.featureName,
+            appsPage
+        );
 
+        // Action
         await homePage.deleteApp(appData.appName);
 
-        await expect(async () => {
-            await expect(appLocator).not.toBeVisible()
-        }).toPass({
-            intervals: [1000, 2000, 5000],
-            timeout: 10000
-        });
+        // Assertion
+        await homePage.ensureAppNotInFavorites(appData.appName);
     });
 });
