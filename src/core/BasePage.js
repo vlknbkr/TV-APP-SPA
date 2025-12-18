@@ -1,24 +1,33 @@
-const { RemoteControl } = require('../utils/RemoteControl');
-const { expect } = require('@playwright/test');
+import { RemoteControl } from '../utils/RemoteControl.js';
+import { expect } from '@playwright/test';
+import { TITAN_OS_LOCATORS } from '../locators/locators.js';
 
-class BasePage {
+export class BasePage {
     constructor(page) {
         this.page = page;
         this.remote = new RemoteControl(page);
     }
 
     async open() {
-        throw new Error("Method 'open()' must be implemented.");
+        throw new Error("Method 'open()' must be implemented by subclass.");
     }
 
-    /**
-     * Protected helper to navigate to a specific path using the BASE_URL.
-     * @param {string} path - The path to append to BASE_URL (e.g., 'apps')
-     */
     async goto(path = '') {
-        await this.page.goto(process.env.BASE_URL + path, { waitUntil: 'networkidle' });
+        await this.page.goto(
+            `${process.env.BASE_URL}${path}`,
+            { waitUntil: 'domcontentloaded' }
+        );
     }
 
-}
+    async reloadAndWait(waitPage) {
+        await this.reload();
+        await waitPage();
+    }
 
-module.exports = { BasePage };
+    async expectFocused(locator) {
+        await expect(
+            locator,
+            'Expected element to have TV focus'
+        ).toHaveAttribute('data-focused', 'focused');
+    }
+}
