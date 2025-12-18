@@ -3,8 +3,8 @@ import { TITAN_OS_LOCATORS } from '../locators/locators.js';
 import { expect } from '@playwright/test';
 
 export class AppsPage extends BasePage {
-    constructor(page) {
-        super(page);
+    constructor(page, options = {}) {
+        super(page, options);
 
         this.menuItem = page.locator(TITAN_OS_LOCATORS.MENU_ITEM('Apps'));
         this.listSelector = this.page.locator(TITAN_OS_LOCATORS.LIST_SELECTOR);
@@ -39,16 +39,25 @@ export class AppsPage extends BasePage {
     async addToFavoritesButton() {
         const button = this.addToFavBtnLocator;
 
-        await expect(button, "Add to Favorites button is not visible.").toBeVisible();
-        await expect(button, "Add to Favorites button does not focused.").toHaveAttribute('data-focused', 'true');
+        await expect(button, 'Add to Favorites button is not visible.').toBeVisible();
+        // Focus conventions differ across components; accept both.
+        await expect(button, 'Add to Favorites button is not focused.').toHaveAttribute(
+            'data-focused',
+            /^(true|focused)$/
+        );
 
-        const text = (await button.textContent())?.trim();
+        const text = (await button.textContent())?.trim() ?? '';
 
         if (text === 'Add to Favourites') {
             await this.remote.select();
+        } else if (text === 'Remove from Favourites') {
+            return;
         } else {
             throw new Error(`Unexpected favorite button state: "${text}"`);
         }
+
+        await this.waitForSpaReady();
+
         await this.page.waitForURL(process.env.BASE_URL, { timeout: 20000 });
     }
 
@@ -57,10 +66,8 @@ export class AppsPage extends BasePage {
         await this.open();
         await this.navigateToApp(featureName, appName);
 
-        // Open app details
         await this.remote.select();
 
-        // Add to favorites if needed
         await this.addToFavoritesButton();
     }
 
@@ -100,7 +107,7 @@ export class AppsPage extends BasePage {
     }
 
     async waitUntilAppsReady() {
-        await this.page.waitForTimeout(2000);
+        await this.waitForSpaReady();
         const miniBanner = this.page.locator(
             TITAN_OS_LOCATORS.MINI_BANNER
         );
@@ -108,7 +115,7 @@ export class AppsPage extends BasePage {
         await expect(async () => {
             const banners = miniBanner.locator('[role="listitem"]');
             const bannerCount = await banners.count();
-            
+
             await expect(this.menuItem).toHaveAttribute('aria-selected', 'true');
 
             if (bannerCount === 0) {

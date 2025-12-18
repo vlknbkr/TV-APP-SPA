@@ -4,8 +4,8 @@ import { expect } from '@playwright/test';
 import { TITAN_OS_LOCATORS } from '../locators/locators.js';
 
 export class SearchPage extends BasePage {
-    constructor(page) {
-        super(page);
+    constructor(page, options = {}) {
+        super(page, options);
 
         this.menuItem = page.locator(TITAN_OS_LOCATORS.MENU_ITEM('Search'));
         this.searchInput = page.locator(TITAN_OS_LOCATORS.SEARCH_INPUT);
@@ -25,7 +25,6 @@ export class SearchPage extends BasePage {
             'Search Input is NOT visible'
         ).toBeVisible();
 
-        // Move focus from input to categories
         await this.remote.down();
 
         const target = this.categoryCard(categoryName);
@@ -45,6 +44,7 @@ export class SearchPage extends BasePage {
     }
 
     async waitUntilSearchReady() {
+        await this.waitForSpaReady();
         const items = this.categoryList.locator('[role="listitem"]');
 
         await expect(this.menuItem).toHaveAttribute('aria-selected', 'true');

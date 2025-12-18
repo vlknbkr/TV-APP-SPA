@@ -3,8 +3,8 @@ import { BasePage } from '../core/BasePage.js';
 import { TITAN_OS_LOCATORS } from '../locators/locators.js';
 
 export class ChannelPage extends BasePage {
-    constructor(page) {
-        super(page);
+    constructor(page, options = {}) {
+        super(page, options);
 
         this.menuItem = page.locator(TITAN_OS_LOCATORS.MENU_ITEM('Channels'));
         this.activeChannel = page.locator(TITAN_OS_LOCATORS.CHANNELS_ACTIVE_TITLE);
@@ -20,6 +20,7 @@ export class ChannelPage extends BasePage {
     }
 
     async waitUntilChannelsReady() {
+        await this.waitForSpaReady();
         await expect(this.menuItem).toHaveAttribute('aria-selected', 'true');
 
         await expect(

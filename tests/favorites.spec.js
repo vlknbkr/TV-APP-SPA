@@ -16,14 +16,9 @@ test.describe.serial('Favorites Workflow', () => {
         await homePage.expectAppExistInFavList(appData.appName);
     });
 
-    test(`Remove ${appData.appName} from favorites`, async ({ homePage, appsPage }) => {
+    test(`Remove ${appData.appName} from favorites`, async ({ homePage, favoritesFlow }) => {
         // Pre-condition
-        await homePage.open();
-        await homePage.ensureAppExistInFavList(
-            appData.appName,
-            appData.featureName,
-            appsPage
-        );
+        await favoritesFlow.ensureFavoriteExists(appData.featureName, appData.appName);
 
         // Action
         await homePage.deleteAppFromFavlist(appData.appName);
