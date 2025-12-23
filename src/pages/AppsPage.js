@@ -1,156 +1,69 @@
-import { expect } from '@playwright/test';
 import { BasePage } from './BasePage.js';
+import { MenuComponent } from '../components/MenuComponent.js';
+import { CategoryListComponent } from '../components/CategoryListComponent.js';
 
-/**
- * AppsPage:
- * - Search and browse apps
- * - Add to favorites actions remain page-level
- * - Orchestration belongs in flows
- */
 export class AppsPage extends BasePage {
-  /**
-   * @param {import('@playwright/test').Page} page
-   */
   constructor(page) {
     super(page);
 
-    this.root = page.locator('[data-testid="apps-page"], main').first();
-    this.searchEntry = page.locator('[data-testid*="search"], [aria-label="Search"], [aria-label*="Search"]').first();
+    // ✅ stable root: the menubar wrapper
+    this.menu = new MenuComponent(this.page.locator('[role="menubar"]'));
 
-    this.listsContainer = page.locator('[data-testid*="list"], [data-testid*="row"], section').first();
-    this.tiles = page.locator('[data-testid^="tile-"], [data-testid*="app-tile"], [data-testid*="tile"]');
-
-    this.addToFavButton = page.locator(
-      '[data-testid*="add-to-fav"], [data-testid*="favorite"], button:has-text("Add to Favourites"), button:has-text("Add to Favorites")'
-    ).first();
-
-    this.removeFromFavButton = page.locator(
-      '[data-testid*="remove-from-fav"], button:has-text("Remove from Favourites"), button:has-text("Remove from Favorites")'
-    ).first();
-
-    this.backButton = page.locator('[data-testid*="back"], [aria-label="Back"], button:has-text("Back")').first();
-  }
-
-  async expectOnAppsPage() {
-    await expect(this.root).toBeVisible({ timeout: 20_000 });
-  }
-
-  /**
-   * Focus a category row by its aria-label (or visible text) then focus an app tile inside it.
-   * This is robust against changing item positions.
-   */
-  async focusAppInCategory(categoryName, appName) {
-    const targetCategory = categoryName.trim().toLowerCase();
-    const targetApp = appName.trim().toLowerCase();
-
-    await this.expectOnAppsPage();
-
-    // Many TV UIs label rows with aria-label
-    const rows = this.page.locator('[data-testid^="list-item-"], [aria-label*="list"], [data-testid*="row"]');
-    const rowCount = await rows.count();
-
-    // Ensure we are on content area
-    await this.page.focus('body');
-    await this.remote.down(2);
-
-    let foundRow = null;
-
-    for (let i = 0; i < rowCount; i++) {
-      const row = rows.nth(i);
-      const label = (await row.getAttribute('aria-label'))?.trim().toLowerCase() ?? '';
-      const text = (await row.textContent())?.trim().toLowerCase() ?? '';
-
-      if (label.includes(targetCategory) || text.includes(targetCategory)) {
-        foundRow = row;
-        break;
-      }
-    }
-
-    if (!foundRow) {
-      // Fallback: scan down until row matches
-      await this.scanFocusUntil(
-        this.page.locator('body'),
-        async (focused) => {
-          const label = (await this.getElementLabel(focused)).toLowerCase();
-          return label.includes(targetCategory);
-        },
-        { maxSteps: 20, direction: 'down' }
-      );
-    } else {
-      await expect(foundRow).toBeVisible();
-      // Move focus down until focus is inside that row
-      await this.scanFocusUntil(
-        foundRow,
-        async (focused) => {
-          // If focus enters row container, focused element should exist within row
-          const within = this.focusedWithin(foundRow);
-          return (await within.count()) > 0;
-        },
-        { maxSteps: 10, direction: 'down' }
-      );
-    }
-
-    // Now scan horizontally inside current row to find the app
-    const activeRow = foundRow ?? this.page.locator('body');
-    await this.scanFocusUntil(
-      activeRow,
-      async (focused) => {
-        const label = (await this.getElementLabel(focused)).toLowerCase();
-        return label.includes(targetApp);
-      },
-      { maxSteps: 50, direction: 'right' }
+    // ✅ your new strategy: lists-container as root
+    this.categories = new CategoryListComponent(
+      this.page.locator('[data-testid="lists-container"]')
     );
-
-    return this.focusedWithin(activeRow).first();
   }
 
-  /**
-   * Click/select current focused app tile.
-   */
-  async openFocusedApp() {
-    await expect(this.page.locator(this.focusedAttributeSelector()).first()).toBeVisible();
+  async open() {
+    await this.page.goto(process.env.BASE_URL);
+    await this.isLoaded();
+  }
+
+  async isLoaded() {
+    // menu should exist, lists should be visible
+    await this.menu.locator().waitFor({ state: 'visible' });
+    await this.categories.locator().waitFor({ state: 'visible' });
+    // optional: content ready on first list
+    await this.categories.firstList().waitFor({ state: 'visible' });
+  }
+
+  async focusCategory(categoryName) {
+    const category = this.categories.categoryByName(categoryName);
+
+    // If it’s already focused, do nothing
+    if (await category.isFocused()) return;
+
+    // Move until focused (your Remote/keyboard logic likely lives in BasePage or BaseComponent)
+    await this.remote.moveTo(async () => category.isFocused(), {
+      // these directions depend on your current focus position
+      // keep simple: try down a few times
+      attempts: 25,
+      action: () => this.remote.down(),
+    });
+  }
+
+  async focusApp(categoryName, addData) {
+    const category = this.categories.categoryByName(categoryName);
+    await this.focusCategory(categoryName);
+
+    // inside that category row, focus the app item by data-testid (addData)
+    const app = category.item(addData);
+
+    if (await app.isFocused()) return;
+
+    await this.remote.moveTo(async () => app.isFocused(), {
+      attempts: 40,
+      action: () => this.remote.right(),
+    });
+  }
+
+  async addFocusedAppToFavApps() {
+    // Usually: press OK / Enter on focused app
     await this.remote.select();
-    await this.page.waitForTimeout(900);
-  }
 
-  /**
-   * Add current app to favorites, asserting button presence and effect.
-   */
-  async addFocusedAppToFavorites() {
-    // Many UIs show a details overlay with button
-    await expect(async () => {
-      const isVisible = await this.addToFavButton.isVisible().catch(() => false);
-      const isAltVisible = await this.removeFromFavButton.isVisible().catch(() => false);
-      expect(isVisible || isAltVisible, 'Expected Add/Remove favorites button to be visible').toBeTruthy();
-    }).toPass({ timeout: 12_000 });
-
-    const addVisible = await this.addToFavButton.isVisible().catch(() => false);
-
-    if (addVisible) {
-      await this.addToFavButton.click().catch(async () => {
-        await this.remote.select();
-      });
-      await this.page.waitForTimeout(600);
-      // After adding, "remove" should appear or add disappears
-      await expect(async () => {
-        const nowRemove = await this.removeFromFavButton.isVisible().catch(() => false);
-        const nowAdd = await this.addToFavButton.isVisible().catch(() => false);
-        expect(nowRemove || !nowAdd, 'Expected app to be added to favorites').toBeTruthy();
-      }).toPass({ timeout: 10_000 });
-    }
-  }
-
-  /**
-   * Navigate back (if possible) to Home.
-   */
-  async goBackToHome() {
-    if (await this.backButton.isVisible().catch(() => false)) {
-      await this.backButton.click().catch(() => {});
-      await this.page.waitForTimeout(800);
-      return;
-    }
-    // fallback
-    await this.page.keyboard.press('Escape').catch(() => {});
-    await this.page.waitForTimeout(800);
+    // If there is a toast / UI feedback in your app, assert it here.
+    // Otherwise keep it generic: wait for network/idle or small stable condition.
+    await this.page.waitForTimeout(250);
   }
 }

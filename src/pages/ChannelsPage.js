@@ -1,7 +1,7 @@
 import { BasePage } from './BasePage';
 import { MenuComponent } from '../components/MenuComponent';
 
-export class SearchPage extends BasePage {
+export class ChannelsPage extends BasePage {
   constructor(page) {
     super(page);
     this.menu = new MenuComponent(this.page.locator('placeholder'));
@@ -11,5 +11,5 @@ export class SearchPage extends BasePage {
 
   async isLoaded() { }
 
-  async focusCategory(categoryName) { }
+  async switchChannel(channelName) { }
 }

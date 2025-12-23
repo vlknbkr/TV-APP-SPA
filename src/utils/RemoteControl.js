@@ -1,43 +1,74 @@
-/**
- * RemoteControl helper:
- * A minimal abstraction for TV-style navigation.
- * We keep it intentionally simple and synchronous (await keypress).
- */
+// src/utils/RemoteControl.js
+import { expect } from '@playwright/test';
+
 export class RemoteControl {
-  /**
-   * @param {import('@playwright/test').Page} page
-   */
-  constructor(page) {
+  constructor(page, options = {}) {
     this.page = page;
+    this.delay = options.delay ?? 200;
+    this.longPressMs = options.longPressMs ?? 900;
+    this.timeout = options.timeout ?? 5000;
+    this.log = options.log ?? true;
   }
 
-  async up(times = 1) {
-    for (let i = 0; i < times; i++) await this.page.keyboard.press('ArrowUp');
+  _log(message) {
+    if (this.log) console.log(message);
   }
 
-  async down(times = 1) {
-    for (let i = 0; i < times; i++) await this.page.keyboard.press('ArrowDown');
+  async press(key, times = 1) {
+    for (let i = 0; i < times; i++) {
+      await this.page.keyboard.press(key, { delay: this.delay });
+      this._log(`[Remote] ${key}`);
+    }
   }
 
   async left(times = 1) {
-    for (let i = 0; i < times; i++) await this.page.keyboard.press('ArrowLeft');
+    await this.press('ArrowLeft', times);
   }
 
   async right(times = 1) {
-    for (let i = 0; i < times; i++) await this.page.keyboard.press('ArrowRight');
+    await this.press('ArrowRight', times);
   }
 
-  async select(times = 1) {
-    for (let i = 0; i < times; i++) await this.page.keyboard.press('Enter');
+  async up(times = 1) {
+    await this.press('ArrowUp', times);
   }
 
-  /**
-   * "Long press" simulation for remote.
-   * Many TV UIs react to holding Enter, but DOM behavior varies.
-   */
-  async longPressEnter(ms = 900) {
+  async down(times = 1) {
+    await this.press('ArrowDown', times);
+  }
+
+  async back() {
+    await this.press('Backspace', 1);
+  }
+
+  async assertFocused(target) {
+    if (!target) throw new Error('assertFocused(target) requires a Locator');
+
+    await expect(target).toHaveAttribute('data-focused', /^(focused|true)$/i, {
+      timeout: this.timeout,
+    });
+  }
+
+  async select(target) {
+    if (!target) throw new Error('select(target) requires a Locator');
+
+    await this.assertFocused(target);
+    await this.page.keyboard.press('Enter', { delay: this.delay });
+    this._log('[Remote] SELECT');
+
+    await this.page.waitForTimeout(this.delay);
+  }
+
+  async longPressSelect(target, ms = this.longPressMs) {
+    if (!target) throw new Error('longPressSelect(target, ms?) requires a Locator');
+
+    await this.assertFocused(target);
+    this._log(`[Remote] LONG SELECT (${ms}ms)`);
+
     await this.page.keyboard.down('Enter');
     await this.page.waitForTimeout(ms);
     await this.page.keyboard.up('Enter');
+
+    await this.page.waitForTimeout(this.delay);
   }
 }
