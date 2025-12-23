@@ -1,115 +1,99 @@
 import { BasePage } from '../core/BasePage.js';
+import { FavoritesRowComponent } from '../components/FavoritesRowComponent.js';
 import { TITAN_OS_LOCATORS } from '../locators/locators.js';
-import { expect } from '@playwright/test';
 
 export class HomePage extends BasePage {
     /**
      * @param {import('@playwright/test').Page} page
-     * @param {import('../core/BasePage.js').BasePage} [options]
+     * @param {{ remote?: import('../utils/RemoteControl.js').RemoteControl }} [options]
      */
     constructor(page, options = {}) {
         super(page, options);
-
-        this.menuItem = page.locator(TITAN_OS_LOCATORS.MENU_ITEM('Home'));
-        this.favList = page.locator(TITAN_OS_LOCATORS.FAVOURITE_APPS_CONTAINER);
-        this.favApp = (appName) => page.locator(TITAN_OS_LOCATORS.FAVORITE_APP(appName));
+        this.favRow = new FavoritesRowComponent(page.locator(TITAN_OS_LOCATORS.FAVOURITE_APPS_CONTAINER), page);
     }
 
     async open() {
         await this.goto('');
-        await this.waitForHomeReady();
     }
 
-    async waitForHomeReady() {
-        await this.waitForSpaReady();
-        await expect(this.menuItem).toHaveAttribute('aria-selected', 'true');
-        await expect(this.favList, 'Favorites container is not visible').toBeVisible();
-
-        await expect
-            .poll(async () => await this.favList.count(), { timeout: 20000 })
-            .toBeGreaterThan(0);
-
-        console.log('Home Page is ready');
+    async isLoaded() {
+        return (await this.favRow.isContentReady()) && (await this.favRow.count()) > 0;
     }
 
-    async getFavoriteAppIndex(appName) {
-        const lists = this.favList.locator('[role="listitem"]');
-        const count = await lists.count();
+    /**
+     * @param {string} appId
+     */
+    async focusFavorite(appId) {
+        const items = this.favRow.items();
+        const count = await items.count();
+        let targetIndex = -1;
 
-        for (let colIndex = 0; colIndex < count; colIndex++) {
-            const element = lists.nth(colIndex);
-            const label = await element.getAttribute('aria-label');
-            if (label && label.trim().toLowerCase() === appName.trim().toLowerCase()) {
-                return colIndex;
+        for (let i = 0; i < count; i++) {
+            // Assuming we can identify by some attribute or we have to use the item component wrapper?
+            // The previous logic used aria-label.
+            // Let's check if we can match appId to something.
+            // The `favRow.item(appId)` uses `[data-app-id="${appId}"]`.
+            // So we should look for that.
+            // But we need the index.
+            const item = items.nth(i);
+            // We can check if this item matches the selector `[data-app-id="${appId}"]`
+            // Or simpler: get attribute data-app-id?
+            const id = await item.getAttribute('data-app-id');
+            if (id === appId) {
+                targetIndex = i;
+                break;
+            }
+            // Fallback: aria-label if appId is name (Legacy support if needed, but strict signature implies strict appId usage)
+            const label = await item.getAttribute('aria-label');
+            if (label && label.trim().toLowerCase() === appId.trim().toLowerCase()) {
+                targetIndex = i;
+                break;
             }
         }
-        return -1;
-    }
 
-    async isFavoritePresent(appName) {
-        await this.waitUntilFavListLoad();
-        return (await this.getFavoriteAppIndex(appName)) >= 0;
-    }
-
-    async navigateToAppInFavList(appName) {
-        const index = await this.getFavoriteAppIndex(appName);
-        if (index < 0) {
-            throw new Error(`Favorite app not found: ${appName}`);
+        if (targetIndex === -1) {
+            throw new Error(`Favorite with appId "${appId}" not found`);
         }
-        await this.remote.right(index);
+
+        // Naive navigation: assume we start from 0 or just scroll right?
+        // Proper navigation: find focused index.
+        // Optimization: assume list starts at 0 focused if we just opened?
+        // Safer: find current focus.
+        let focusedIndex = 0;
+        for (let i = 0; i < count; i++) {
+            const focused = await items.nth(i).getAttribute('data-focused');
+            if (focused === 'true') {
+                focusedIndex = i;
+                break;
+            }
+        }
+
+        const diff = targetIndex - focusedIndex;
+        if (diff > 0) {
+            await this.remote.right(diff);
+        } else if (diff < 0) {
+            await this.remote.left(Math.abs(diff));
+        }
+
+        // Ensure it is focused
+        await this.remote.assertFocused(this.favRow.item(appId).locator());
     }
 
+    /**
+     * @param {string} appId
+     */
+    async openEditModeOnFavorite(appId) {
+        await this.focusFavorite(appId);
+        await this.remote.longPressSelect({ ensureFocused: this.favRow.item(appId).locator() });
+    }
 
-    async removeFavorite(appName) {
-        await this.waitForHomeReady();
-        await this.navigateToAppInFavList(appName);
-
-        console.log(`Removing favorite: ${appName}`);
-        await this.remote.longPressSelect();
-
+    async removeFocusedFavorite() {
         await this.remote.down();
+        // Assuming 'down' moves focus to the remove button
+        // We can try to use ensureFocused if we knew the locator of the remove button of the *currently focused* item.
+        // The previously focused item (the tile) is not focused anymore.
+        // But we don't have a parameter for appId here.
+        // So we just call select.
         await this.remote.select();
-
-        await this.waitForSpaReady();
-    }
-
-    async deleteAppFromFavlist(appName) {
-        await this.removeFavorite(appName);
-    }
-
-    async ensureAppNotExistInFavList(appName) {
-        await this.waitForHomeReady();
-        await this.waitUntilFavListLoad();
-
-        if (await this.isFavoritePresent(appName)) {
-            await this.removeFavorite(appName);
-        }
-        await this.expectAppNotExistInFavList(appName);
-    }
-
-    async waitUntilFavListLoad() {
-        await this.waitForHomeReady();
-        await expect(this.favApp("Watch TV"), 'Favorites container is not visible')
-            .toBeVisible();
-    }
-
-    async expectAppExistInFavList(appName) {
-        await this.waitForHomeReady();
-
-        await expect
-            .poll(async () => await this.getFavoriteAppIndex(appName), { timeout: 20000 })
-            .toBeGreaterThanOrEqual(1);
-
-        console.log(`Favorite exists: ${appName}`);
-    }
-
-    async expectAppNotExistInFavList(appName) {
-        await this.open();
-
-        await expect
-            .poll(async () => await this.getFavoriteAppIndex(appName), { timeout: 20000 })
-            .toBe(-1);
-
-        console.log(`Favorite absent: ${appName}`);
     }
 }
