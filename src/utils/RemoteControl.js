@@ -50,9 +50,9 @@ export class RemoteControl {
   }
 
   async select(target) {
-    if (!target) throw new Error('select(target) requires a Locator');
-
-    await this.assertFocused(target);
+    if (target) {
+      await this.assertFocused(target);
+    }
     await this.page.keyboard.press('Enter', { delay: this.delay });
     this._log('[Remote] SELECT');
 
@@ -60,9 +60,9 @@ export class RemoteControl {
   }
 
   async longPressSelect(target) {
-    if (!target) throw new Error('longPressSelect(target, ms?) requires a Locator');
-
-    await this.assertFocused(target);
+    if (target) {
+      await this.assertFocused(target);
+    }
     this._log(`[Remote] LONG SELECT (${this.longPressMs}ms)`);
 
     await this.page.keyboard.down('Enter');

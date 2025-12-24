@@ -10,6 +10,7 @@ test.describe('Favorites', () => {
         await appsPage.addFocusedAppToFavApps(testData.categoryName, testData.appName);
 
         await homePage.isLoaded();
+        await homePage.remote.select();
 
         await expect
             .poll(() => homePage.favAppList.exists(testData.appName), { timeout: 15000 })
