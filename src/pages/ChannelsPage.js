@@ -18,34 +18,29 @@ export class ChannelsPage extends BasePage {
   }
 
   async isLoaded() {
-    await expect(
-      this.overlay.root(),
-      'Channels overlay should be visible'
-    ).toBeVisible();
+    await expect(this.overlay.root(), 'Channels overlay should be visible').toBeVisible();
+
     await expect(
       this.overlay.channelInfo.root(),
       'Channel info container should be visible'
     ).toBeVisible();
 
     await expect
-      .poll(async () => this.overlay.channelInfo.isContentReady(), { timeout: 15000 })
+      .poll(() => this.overlay.channelInfo.isContentReady(), { timeout: 15000 })
       .toBe(true);
 
-    await expect(
-      this.overlay.channelInfo.switcher(),
-      'Channels switcher should be visible'
-    ).toBeVisible();
+    await expect(this.overlay.channelInfo.switcher(), 'Channels switcher should be visible')
+      .toBeVisible();
 
     await expect
       .poll(async () => {
-        const label = await this.overlay.channelInfo.currentLabel();
-        return !!label && label.trim().length > 0;
+        const key = await this.overlay.channelInfo.currentKey();
+        return !!key;
       }, { timeout: 15000 })
       .toBe(true);
   }
 
   /**
-   * Switches channel using remote up/down.
    * @param {'up'|'down'} direction
    * @param {number} steps
    */
@@ -59,11 +54,12 @@ export class ChannelsPage extends BasePage {
 
     await this.isLoaded();
 
-    const before = await this.overlay.channelInfo.currentLabel();
+    const beforeKey = await this.overlay.channelInfo.currentKey();
+
     if (direction === 'down') await this.remote.down(steps);
     else await this.remote.up(steps);
 
-    await this.assertChannelChanged(before);
+    await this.assertChannelChanged(beforeKey);
   }
 
   async openMenu() {
@@ -71,35 +67,23 @@ export class ChannelsPage extends BasePage {
 
     await this.remote.longPressSelect();
 
-    await expect(
-      this.overlay.menu.root(),
-      'Channels menu root should exist'
-    ).toBeVisible();
-
-    await expect(
-      this.overlay.menu.backButton(),
-      'Channels menu Back button should be visible after opening menu'
-    ).toBeVisible({ timeout: 15000 });
+    await this.overlay.menu.waitUntilOpen();
+    await expect(this.overlay.menu.backButton(), 'Menu back button should be visible').toBeVisible();
   }
 
   async closeMenu() {
+    // Only try closing if it’s actually open/visible.
     if (await this.overlay.menu.backButton().count() === 0) return;
 
     await this.remote.back();
     await this.overlay.menu.waitUntilClosed();
   }
 
-  /**
-   * Asserts the current channel label changed from prevLabel.
-   * @param {string|null} prevLabel
-   */
-  async assertChannelChanged(prevLabel) {
+  async assertChannelChanged(prevKey) {
     await expect
       .poll(async () => {
-        const now = await this.overlay.channelInfo.currentLabel();
-        if (!now) return false;
-        if (!prevLabel) return true;
-        return now.trim() !== prevLabel.trim();
+        const now = await this.overlay.channelInfo.currentKey();
+        return !!now && now !== prevKey;
       }, { timeout: 15000 })
       .toBe(true);
   }

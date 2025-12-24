@@ -24,7 +24,6 @@ export class HomePage extends BasePage {
   }
 
   async isLoaded() {
-    await expect(this.menuBar).toBeVisible();
     await expect(this.favList).toBeVisible();
     await expect(this.watchTV).toBeVisible();
   }

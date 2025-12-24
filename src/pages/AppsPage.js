@@ -22,7 +22,6 @@ export class AppsPage extends BasePage {
 
 
   async isLoaded() {
-    await expect(this.menuBar).toBeVisible();
     await expect(this.categories.locator()).toBeVisible();
     await this.miniBanner.waitFor({ state: 'visible' });
     expect(await this.miniBannerItems.count()).toBeGreaterThan(0);

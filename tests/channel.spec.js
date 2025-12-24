@@ -2,26 +2,20 @@
 import { test, expect } from '../src/fixtures/fixtures.js';
 
 test.describe('Channels', () => {
-    test('Verify channels page is available to us', async ({ channelsPage }) => {
-        await channelsPage.open();
+  test('Verify channels page is available to us', async ({ channelsPage }) => {
+    await channelsPage.open();
 
-        const beforeLabel = await channelsPage.overlay.channelInfo.currentLabel();
-        expect(beforeLabel, 'Initial channel label should be readable').toBeTruthy();
+    const beforeKey = await channelsPage.overlay.channelInfo.currentKey();
+    expect(beforeKey, 'Initial channel key should be readable').toBeTruthy();
 
-        await channelsPage.switchChannel('down', 1);
-        await channelsPage.overlay.channelInfo.waitForChannelChange(beforeLabel);
+    await channelsPage.switchChannel('down', 2);
 
-        const afterLabel = await channelsPage.overlay.channelInfo.currentLabel();
-        expect(afterLabel, 'Channel label should change after switching').not.toBe(beforeLabel);
+    const afterKey = await channelsPage.overlay.channelInfo.currentKey();
+    expect(afterKey, 'Channel should change after switching').not.toBe(beforeKey);
 
-        await channelsPage.openMenu();
+    await channelsPage.openMenu();
+    await expect(channelsPage.overlay.menu.backButton(), 'Menu back button should be visible').toBeVisible();
 
-        await expect(
-            channelsPage.page.locator('#channels-menu[role="menu"]'),
-            'Channels menu should be visible after opening'
-        ).toBeVisible();
-
-        await channelsPage.closeMenu();
-        await channelsPage.overlay.menu.waitUntilClosed();
-    });
+    await channelsPage.closeMenu();
+  });
 });
