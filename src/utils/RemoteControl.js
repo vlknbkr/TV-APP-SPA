@@ -5,7 +5,7 @@ export class RemoteControl {
   constructor(page, options = {}) {
     this.page = page;
     this.delay = options.delay ?? 200;
-    this.longPressMs = options.longPressMs ?? 900;
+    this.longPressMs = options.longPressMs ?? 2000;
     this.timeout = options.timeout ?? 5000;
     this.log = options.log ?? true;
   }
@@ -59,14 +59,14 @@ export class RemoteControl {
     await this.page.waitForTimeout(this.delay);
   }
 
-  async longPressSelect(target, ms = this.longPressMs) {
+  async longPressSelect(target) {
     if (!target) throw new Error('longPressSelect(target, ms?) requires a Locator');
 
     await this.assertFocused(target);
-    this._log(`[Remote] LONG SELECT (${ms}ms)`);
+    this._log(`[Remote] LONG SELECT (${this.longPressMs}ms)`);
 
     await this.page.keyboard.down('Enter');
-    await this.page.waitForTimeout(ms);
+    await this.page.waitForTimeout(this.longPressMs);
     await this.page.keyboard.up('Enter');
 
     await this.page.waitForTimeout(this.delay);

@@ -1,13 +1,7 @@
 import { BaseComponent } from './BaseComponent.js';
 
 export class MenuItemComponent extends BaseComponent {
-  /**
-   * Expected element (this.root) is the ACTUAL menu item:
-   *  - [role="menuitem"][aria-label="Home"][aria-selected="true/false"]
-   * Focus signals seen in DOM:
-   *  - data-focused="focused" (or "na")
-   *  - data-is-focused="true/false"
-   */
+
 
   locator() {
     return this.root;

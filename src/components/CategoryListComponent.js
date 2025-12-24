@@ -23,6 +23,7 @@ export class CategoryListComponent extends BaseComponent {
         return new CategoryAppItemComponent(row, this.page);
     }
 
+    
     /**
      * Category row is unique by aria-label (e.g. "Featured Apps", "Video", ...)
      * @param {string} categoryName

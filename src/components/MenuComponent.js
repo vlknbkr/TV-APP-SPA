@@ -1,15 +1,7 @@
 import { BaseComponent } from './BaseComponent.js';
 
 export class MenuComponent extends BaseComponent {
-  /**
-   * Expected structure:
-   *  - root: [role="menubar"] (._menuItems_... in DOM)
-   *    - wrappers: [data-testid^="main-menu-item-"]
-   *      - actual item: [role="menuitem"][aria-label="..."]
-   *
-   * Selection can be detected by aria-selected="true"
-   * Focus can be detected by data-focused="focused" or data-is-focused="true"
-   */
+
 
   items() {
     // return actual clickable/interactive items

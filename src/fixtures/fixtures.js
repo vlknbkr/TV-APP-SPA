@@ -3,9 +3,8 @@ import { RemoteControl } from '../utils/RemoteControl.js';
 
 import { HomePage } from '../pages/HomePage.js';
 import { AppsPage } from '../pages/AppsPage.js';
-import { ChannelPage } from '../pages/ChannelPage.js';
+import { ChannelsPage } from '../pages/ChannelsPage.js';
 import { SearchPage } from '../pages/SearchPage.js';
-import { FavoritesFlow } from '../flows/FavoritesFlow.js';
 
 /**
  * Keep fixtures minimal + useful:
@@ -26,16 +25,12 @@ export const test = base.extend({
     await use(new AppsPage(page, { remote }));
   },
 
-  channelPage: async ({ page, remote }, use) => {
-    await use(new ChannelPage(page, { remote }));
+  channelsPage: async ({ page, remote }, use) => {
+    await use(new ChannelsPage(page, { remote }));
   },
 
   searchPage: async ({ page, remote }, use) => {
     await use(new SearchPage(page, { remote }));
-  },
-
-  favoritesFlow: async ({ homePage, appsPage }, use) => {
-    await use(new FavoritesFlow(homePage, appsPage));
   },
 });
 

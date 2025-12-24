@@ -4,7 +4,7 @@ import { MenuComponent } from '../components/MenuComponent';
 export class SearchPage extends BasePage {
   constructor(page) {
     super(page);
-    this.menu = new MenuComponent(this.page.locator('placeholder'));
+    this.menu = new MenuComponent(this.page.locator('[role="menubar"]'));
   }
 
   async open() { }
