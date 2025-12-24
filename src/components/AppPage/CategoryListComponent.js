@@ -1,6 +1,6 @@
 // src/components/CategoryListComponent.js
-import { BaseComponent } from './BaseComponent.js';
-import { CategoryAppItemComponent } from './CategoryAppItemComponent.js';
+import { BaseComponent } from '../BasePage/BaseComponent.js';
+import { CategoryAppItemComponent } from '../AppPage/CategoryAppItemComponent.js';
 
 export class CategoryListComponent extends BaseComponent {
     /**

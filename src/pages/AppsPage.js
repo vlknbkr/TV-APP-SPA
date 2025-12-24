@@ -1,6 +1,6 @@
 import { BasePage } from './BasePage.js';
 import { expect } from '@playwright/test';
-import { CategoryListComponent } from '../components/CategoryListComponent.js';
+import { CategoryListComponent } from '../components/AppPage/CategoryListComponent.js';
 
 export class AppsPage extends BasePage {
   constructor(page) {
@@ -72,7 +72,6 @@ export class AppsPage extends BasePage {
     for (let s = 0; s < steps; s++) {
       await move();
     }
-    console.log(this.category(categoryName).getAppLocator(appName));
     await expect(this.category(categoryName).getAppLocator(appName)).toHaveAttribute('data-focused', 'focused');
   }
 

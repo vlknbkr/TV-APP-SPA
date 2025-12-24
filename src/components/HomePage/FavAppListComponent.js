@@ -1,5 +1,5 @@
 // src/components/FavAppListComponent.js
-import { BaseComponent } from './BaseComponent.js';
+import { BaseComponent } from '../BasePage/BaseComponent.js';
 import { FavAppItemComponent } from './FavAppItemComponent.js';
 
 export class FavAppListComponent extends BaseComponent {

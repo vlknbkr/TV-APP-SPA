@@ -1,5 +1,5 @@
 // src/components/AppItemComponent.js
-import { BaseComponent } from './BaseComponent';
+import { BaseComponent } from '../BasePage/BaseComponent';
 
 export class AppItemComponent extends BaseComponent {
     async getName() {

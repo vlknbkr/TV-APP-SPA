@@ -1,7 +1,7 @@
 // src/pages/SearchPage.js
 import { expect } from '@playwright/test';
 import { BasePage } from './BasePage.js';
-import { SearchComponent } from '../components/SearchComponent.js';
+import { SearchComponent } from '../components/SearchPage/SearchComponent.js';
 
 export class SearchPage extends BasePage {
   /**

@@ -1,6 +1,6 @@
 import { expect } from '@playwright/test';
 import { BasePage } from './BasePage.js';
-import { FavAppListComponent } from '../components/FavAppListComponent.js';
+import { FavAppListComponent } from '../components/HomePage/FavAppListComponent.js';
 
 export class HomePage extends BasePage {
   /**
@@ -40,17 +40,11 @@ export class HomePage extends BasePage {
     const target = await this.favAppList.appIndex(addData);
     if (target < 0) throw new Error(`Fav app "${addData}" not found in Favourite Apps row.`);
 
-    console.log('target', target);
-    console.log('count', count);
-    console.log('current', current);
-
-    // If already focused, done
     if (current === target) {
       await expect(this.favAppList.items().nth(target)).toHaveAttribute('data-focused', 'focused');
       return;
     }
 
-    // Decide direction + steps (simple, non-wrapping version)
     const steps = Math.abs(target - current);
     const move = target > current ? () => this.remote.right() : () => this.remote.left();
 

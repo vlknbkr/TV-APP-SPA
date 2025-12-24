@@ -1,5 +1,5 @@
 // src/components/CategoryAppItemComponent.js
-import { BaseComponent } from './BaseComponent.js';
+import { BaseComponent } from '../BasePage/BaseComponent.js';
 import { AppItemComponent } from './AppItemComponent.js';
 
 export class CategoryAppItemComponent extends BaseComponent {

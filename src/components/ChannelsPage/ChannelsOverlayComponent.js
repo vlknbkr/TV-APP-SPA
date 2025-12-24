@@ -1,6 +1,6 @@
 // src/components/ChannelsOverlayComponent.js
-import { ChannelInfoComponent } from './ChannelInfoComponent.js';
-import { ChannelsMenuComponent } from './ChannelsMenuComponent.js';
+import { ChannelInfoComponent } from '../ChannelsPage/ChannelInfoComponent.js';
+import { ChannelsMenuComponent } from '../ChannelsPage/ChannelsMenuComponent.js';
 
 export class ChannelsOverlayComponent {
   /**

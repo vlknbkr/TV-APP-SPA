@@ -1,5 +1,4 @@
-// src/components/FavAppItemComponent.js
-import { AppItemComponent } from './AppItemComponent.js';
+import { AppItemComponent } from '../AppPage/AppItemComponent.js';
 
 export class FavAppItemComponent extends AppItemComponent {
   removeButton() {

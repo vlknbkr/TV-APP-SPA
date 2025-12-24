@@ -1,7 +1,7 @@
 // src/pages/ChannelsPage.js
 import { expect } from '@playwright/test';
 import { BasePage } from './BasePage.js';
-import { ChannelsOverlayComponent } from '../components/ChannelsOverlayComponent.js';
+import { ChannelsOverlayComponent } from '../components/ChannelsPage/ChannelsOverlayComponent.js';
 
 export class ChannelsPage extends BasePage {
   /**

@@ -1,5 +1,5 @@
 // src/components/SearchBarComponent.js
-import { BaseComponent } from './BaseComponent.js';
+import { BaseComponent } from '../BasePage/BaseComponent.js';
 
 export class SearchBarComponent extends BaseComponent {
   /**
