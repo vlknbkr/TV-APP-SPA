@@ -70,10 +70,30 @@ export class AppsPage extends BasePage {
 
     for (let s = 0; s < steps; s++) { await move(); }
     const targetApp = categoryRow.getAppLocator(appName);
-    
+
     console.log(" appName: ", appName);
     console.log("targetApp: ", targetApp);
 
-    await expect(targetApp).toHaveAttribute('data-focused', 'focused',{timeout: 10000});
+    await expect(targetApp).toHaveAttribute('data-focused', 'focused', { timeout: 10000 });
+  }
+
+  async addFocusedAppToFavApps(categoryName, appName) {
+    // 1. Get the category row component instance
+    const categoryRow = this.categories.getCategoryByName(categoryName);
+    const targetAppLocator = categoryRow.getAppLocator(appName);
+
+    // 2. Select the app to open its details/context menu
+    await this.remote.select(targetAppLocator);
+
+    // 3. Select the "Add to Favorites" button
+    // Ensure the button is actually visible and enabled before clicking
+    await expect(this.addToFavoritesButton).toBeVisible();
+    await this.remote.select(this.addToFavoritesButton);
+
+    await Promise.race([
+      this.addToFavoritesButton.waitFor({ state: 'detached', timeout: 15000 }),
+      expect(this.addToFavoritesButton)
+        .toHaveAttribute('data-loading', 'false', { timeout: 15000 }),
+    ]);
   }
 }

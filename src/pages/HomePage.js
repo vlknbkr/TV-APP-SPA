@@ -1,6 +1,7 @@
 import { expect } from '@playwright/test';
 import { BasePage } from './BasePage.js';
 import { FavAppListComponent } from '../components/HomePage/FavAppListComponent.js';
+import { FavAppItemComponent } from '../components/HomePage/FavAppItemComponent.js';
 
 export class HomePage extends BasePage {
   /**
@@ -31,7 +32,6 @@ export class HomePage extends BasePage {
   }
 
   async focusFavApp(appName) {
-    // 3. The logic remains similar, but we use the component's cleaner methods
     const count = await this.favAppList.count();
     if (count === 0) throw new Error('Favourite Apps row is empty.');
 
@@ -50,42 +50,26 @@ export class HomePage extends BasePage {
       await move();
     }
 
-    // Use the component's nth item helper
     await expect(this.favAppList.items().nth(target)).toHaveAttribute('data-focused', 'focused');
   }
 
-  async openEditModeOnFavApp(appName) {
-    await this.focusFavApp(appName);
 
-    const appItem = this.favAppList.item(appName);
+  async removeFocusedFavApp(appName) {
+    // Use a locator that ignores the aria-hidden state of the list
+    const listRoot = this.favAppList.list(); // locator('#favourite-apps')
+    const appItemRoot = listRoot.locator(`[role="listitem"][data-testid="${appName}"]`);
+    const removeBtn = appItemRoot.locator('[data-testid="editmode-remove-app"]');
 
-    // We pass the locator of the item to the remote longpress
-    await this.remote.longPressSelect(appItem.root);
+    // 1. Enter Edit Mode
+    await this.remote.longPressSelect(appItemRoot);
 
-    // Verify remove button via the component
-    await expect(appItem.removeButton()).toBeVisible();
-  }
+    // 2. Wait for the button to attach (it exists now because we aren't filtering out aria-hidden="true")
+    await expect(removeBtn).toBeAttached({ timeout: 5000 });
 
-  async removeFocusedFavApp() {
-    // 4. Determine which app is currently focused
-    const focusedIdx = await this.favAppList.focusedIndex();
-    const items = await this.favAppList.items().all();
-    const focusedItemRoot = items[focusedIdx];
-
-    // Wrap it in the Item Component to get access to its logic
-    const appItem = new FavAppItemComponent(focusedItemRoot, this.page);
-    const removeBtn = appItem.removeButton();
-
-    await expect(removeBtn).toBeVisible();
+    // 3. Navigate and Select
     await this.remote.down();
-
-    // 5. Use the logic we built in the item component
-    if (await appItem.isRemoveDisabled()) {
-      const label = await focusedItemRoot.getAttribute('aria-label');
-      throw new Error(`Remove is disabled for "${label}" (Watch TV).`);
-    }
-
+    await expect(removeBtn).toHaveAttribute('data-focused', 'focused', { timeout: 3000 });
     await this.remote.select(removeBtn);
-    await this.page.waitForTimeout(3000); // Wait for animation
+
   }
 }

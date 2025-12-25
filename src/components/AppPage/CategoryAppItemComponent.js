@@ -21,11 +21,9 @@ export class CategoryAppItemComponent extends BaseComponent {
      * Finds an app locator within this category.
      */
     appLocator(appName) {
-        return this.itemsLocator.filter({ 
-            hasAttribute: ['data-testid', appName] 
-        }).first();
+        return this.groupLocator.locator(`[role="listitem"][data-testid="${appName}"]`).first();
     }
-    
+
     getAppLocator(appName) {
         console.log("appLocator: ", this.appLocator(appName));
         return this.appLocator(appName);
@@ -47,14 +45,14 @@ export class CategoryAppItemComponent extends BaseComponent {
     }
 
     async indexApp(appName) {
-        return this.itemsLocator.evaluateAll((els, name) => 
+        return this.itemsLocator.evaluateAll((els, name) =>
             els.findIndex(el => el.getAttribute('data-testid') === name || el.getAttribute('aria-label') === name),
             appName
         );
     }
 
     async focusedIndexApp() {
-        return this.itemsLocator.evaluateAll((els, attr) => 
+        return this.itemsLocator.evaluateAll((els, attr) =>
             els.findIndex(el => el.getAttribute(attr) === 'focused'),
             CategoryAppItemComponent.SELECTORS.focusedAttr
         );

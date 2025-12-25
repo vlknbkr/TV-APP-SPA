@@ -20,7 +20,6 @@ export class FavAppItemComponent extends AppItemComponent {
   async isRemoveDisabled() {
     const focusState = await this.removeButtonLocator.getAttribute(FavAppItemComponent.SELECTORS.focusedAttr);
     
-    // DOM check: <div data-testid="editmode-remove-app" data-focused="disabled">
     if (focusState?.toLowerCase() === FavAppItemComponent.SELECTORS.disabledValue) {
       return true;
     }

@@ -14,7 +14,8 @@ export class FavAppListComponent extends BaseComponent {
 
   constructor(root, page) {
     super(root, page);
-
+    
+    this.listRoot = this.root.locator('#favourite-apps[role="list"]');
     // 1. Initialize core locators in constructor to avoid undefined errors
     this.listLocator = this.root.locator(FavAppListComponent.SELECTORS.list);
 
@@ -39,10 +40,12 @@ export class FavAppListComponent extends BaseComponent {
     return new FavAppItemComponent(tile, this.page);
   }
 
+  editItem(appName) {
+    return this.listRoot.locator(`[role="listitem"][data-testid="${appName}"]`);
+  }
+
   appLocator(appName) {
-    return this.itemsLocator.filter({
-      hasAttribute: ['data-testid', appName]
-    }).first();
+    return this.visibleListLocator.locator(`[role="listitem"][data-testid="${appName}"]`).first();
   }
 
   /**
