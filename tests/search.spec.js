@@ -1,16 +1,16 @@
-import { test, expect } from "../src/fixtures/fixtures.js";
+import { test, expect } from '../src/fixtures/fixtures.js';
+import { APPS_DATA } from '../src/test-data/test.data.js';
 
-test.describe('Search Page', () => {
-    test('search', async ({ searchPage }) => {
-        // Pre-condition
-        await searchPage.open();
-        const categories = await searchPage.getCategoryList();
-        const expectedURL = `${process.env.BASE_URL}search?q=${categories[0]}&type=movie`;
+const genreName = APPS_DATA.ACTION_GENRE;
 
-        // Action
-        await searchPage.openCategory(categories[0]);
+test.describe('Search', () => {
+  test('Verify we can open a category from the search page', async ({ searchPage }) => {
+    await searchPage.open();
 
-        //Assertion
-        await expect(searchPage.page).toHaveURL(expectedURL);
-    });
+    await searchPage.openGenre(genreName);
+
+    await expect(searchPage.search.results.tabs(), 'Search results tabs should be visible').toBeVisible();
+
+    await searchPage.search.results.waitUntilResolved();
+  });
 });

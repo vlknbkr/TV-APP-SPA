@@ -1,12 +1,11 @@
-import { test } from "../src/fixtures/fixtures.js"; // Adjust path to your fixtures
+import { test } from '../src/fixtures/fixtures.js';
 
-test.describe('Channels Page Verification', () => {
+test.describe('Channels Feature', () => {
+  test('Add current channel to favorites via sidebar menu', async ({ channelsPage }) => {
+    await channelsPage.open();
 
-    test('should verify channels page is available to use', async ({ channelPage }) => {
-        // Pre-condition
-        await channelPage.open();
-        
-        // Assertion
-        await channelPage.verifyChannelsPageIsAvailable();
-    });
+    await channelsPage.testFavoriteFullCycle();
+
+    await channelsPage.switchChannel('down', 1);
+  });
 });

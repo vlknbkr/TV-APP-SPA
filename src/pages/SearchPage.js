@@ -1,62 +1,65 @@
-
-import { BasePage } from '../core/BasePage.js';
 import { expect } from '@playwright/test';
-import { TITAN_OS_LOCATORS } from '../locators/locators.js';
+import { BasePage } from './BasePage.js';
+import { SearchComponent } from '../components/SearchPage/SearchComponent.js';
 
 export class SearchPage extends BasePage {
-    constructor(page, options = {}) {
-        super(page, options);
+  /**
+   * @param {import('@playwright/test').Page} page
+   */
+  constructor(page) {
+    super(page);
+    this.search = new SearchComponent(page);
+    this.GRID_COLS = 6;
+  }
 
-        this.menuItem = page.locator(TITAN_OS_LOCATORS.MENU_ITEM('Search'));
-        this.searchInput = page.locator(TITAN_OS_LOCATORS.SEARCH_INPUT);
-        this.categoryList = page.locator(TITAN_OS_LOCATORS.CATEGORY_LIST);
-        this.categoryCard = (name) => page.locator(TITAN_OS_LOCATORS.CATEGORY_CARD(name));
-    }
+  async open() {
+    await this.navigate('search');
+    await this.isLoaded();
+  }
 
-    async open() {
-        await this.goto('search');
-        await this.waitUntilSearchReady();
-    }
+  async isLoaded() {
+    await expect(this.search.bar.input(), 'Search input should be visible').toBeVisible();
+    await expect(this.search.genres.list(), 'Genres list should be visible').toBeVisible();
+  }
 
+  async openGenre(name) {
+    await this.isLoaded();
 
-    async openCategory(categoryName) {
-        await this.waitUntilSearchReady();
-        await expect(this.searchInput,
-            'Search Input is NOT visible'
-        ).toBeVisible();
+    const targetIdx = await this.search.genres.indexGenre(name);
 
-        await this.remote.down();
+    await expect.poll(async () => {
+      const idx = await this.search.genres.focusedIndex();
+      if (idx >= 0) return true;
+      await this.remote.down();
+      return false;
+    }, {
+      timeout: 5000,
+      message: 'Could not move focus from search bar to genres grid.'
+    }).toBe(true);
 
-        const target = this.categoryCard(categoryName);
-        await this.expectFocused(target);
+    await this._moveFocusInGrid(targetIdx, this.GRID_COLS);
 
-        await this.remote.select();
-    }
+    await this.remote.select();
+    await this.search.results.waitUntilResolved();
+  }
 
-    async getCategoryList() {
-        await this.waitUntilSearchReady();
+  async _moveFocusInGrid(targetIdx, cols) {
+    const currentIdx = await this.search.genres.focusedIndex();
 
-        const lists = this.categoryList.locator('[role="listitem"]');
+    const curRow = Math.floor(currentIdx / cols);
+    const curCol = currentIdx % cols;
+    const tgtRow = Math.floor(targetIdx / cols);
+    const tgtCol = targetIdx % cols;
 
-        return await lists.evaluateAll(elements => 
-            elements
-                .map(el => el.getAttribute('aria-label')));
-    }
+    const rowDiff = tgtRow - curRow;
+    const colDiff = tgtCol - curCol;
 
-    async waitUntilSearchReady() {
-        await this.waitForSpaReady();
-        const items = this.categoryList.locator('[role="listitem"]');
+    if (rowDiff > 0) await this.remote.down(rowDiff);
+    if (rowDiff < 0) await this.remote.up(Math.abs(rowDiff));
 
-        await expect(this.menuItem).toHaveAttribute('aria-selected', 'true');
-        await expect(async () => {
-            const count = await items.count();
-            if (count === 0) {
-                throw new Error('Search categories not rendered yet');
-            }
-        }).toPass({
-            intervals: [1000, 2000, 5000],
-            timeout: 20000,
-        });
-        console.log(`Search Page is fully loaded.`)
-    }
+    if (colDiff > 0) await this.remote.right(colDiff);
+    if (colDiff < 0) await this.remote.left(Math.abs(colDiff));
+
+    await expect.poll(() => this.search.genres.focusedIndex()).toBe(targetIdx);
+  }
 }

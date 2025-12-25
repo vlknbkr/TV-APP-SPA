@@ -1,122 +1,86 @@
-import { BasePage } from '../core/BasePage.js';
-import { TITAN_OS_LOCATORS } from '../locators/locators.js';
+import { BasePage } from './BasePage.js';
 import { expect } from '@playwright/test';
+import { MiniBannerComponent } from '../components/AppPage/MiniBannerComponent.js';
+import { CategoryListComponent } from '../components/AppPage/CategoryListComponent.js';
 
 export class AppsPage extends BasePage {
-    constructor(page, options = {}) {
-        super(page, options);
+  constructor(page) {
+    super(page);
 
-        this.menuItem = page.locator(TITAN_OS_LOCATORS.MENU_ITEM('Apps'));
-        this.listSelector = this.page.locator(TITAN_OS_LOCATORS.LIST_SELECTOR);
-        this.addToFavBtnLocator = this.page.locator(
-            TITAN_OS_LOCATORS.ADD_TO_FAVORITES_BUTTON
-        );
+    this.categories = new CategoryListComponent(
+      this.page.locator('[data-testid="lists-container"]'),
+      this.page
+    );
+
+    this.miniBanner = new MiniBannerComponent(
+      this.page.locator('[data-testid="mini-banner"]'),
+      this.page
+    );
+    this.addToFavoritesButton = this.page.locator('[id="app-fav-button"]');
+  }
+
+  async open() {
+    await this.navigate('apps');
+    await this.isLoaded();
+  }
+
+  async isLoaded() {
+    await expect(this.categories.root).toBeVisible();
+    await this.miniBanner.waitForLoaded();
+
+    const count = await this.miniBanner.getCount();
+    expect(count).toBeGreaterThan(0);
+  }
+
+  async focusCategory(categoryName) {
+    const targetIdx = await this.categories.indexCategory(categoryName);
+    if (targetIdx < 0) throw new Error(`Category "${categoryName}" not found.`);
+
+    let currentIdx = await this.categories.focusedIndexCategory();
+
+    for (let i = 0; i < 5 && currentIdx < 0; i++) {
+      await this.remote.down();
+      currentIdx = await this.categories.focusedIndexCategory();
     }
 
-    async open() {
-        await this.goto('page/499');
-        await this.waitUntilAppsReady();
-    }
+    const steps = Math.abs(targetIdx - currentIdx);
+    const move = targetIdx > currentIdx ? () => this.remote.down() : () => this.remote.up();
 
-    async navigateToApp(featureName, itemName) {
-        const coordinates = await this.getAppCoordinates(
-            this.listSelector,
-            featureName,
-            itemName
-        );
-        const headerOfset = 2;
+    for (let s = 0; s < steps; s++) { await move(); }
 
-        if (!coordinates) {
-            throw new Error(`App not found: ${featureName} - ${itemName}`);
-        }
+    await expect(this.categories.getCategoryLocator(categoryName)).toHaveAttribute('data-focused', 'focused');
+  }
 
-        const { rowIndex, colIndex } = coordinates;
+  async focusApp(categoryName, appName) {
+    await this.focusCategory(categoryName);
+    const categoryRow = this.categories.getCategoryByName(categoryName);
 
-        await this.remote.down(rowIndex + headerOfset);
-        await this.remote.right(colIndex);
-    }
+    const targetIdx = await categoryRow.indexApp(appName);
+    if (targetIdx < 0) throw new Error(`App "${appName}" not found in "${categoryName}".`);
 
-    async addToFavoritesButton() {
-        const button = this.addToFavBtnLocator;
+    let currentIdx = await categoryRow.focusedIndexApp();
+    const steps = Math.abs(targetIdx - currentIdx);
+    const move = targetIdx > currentIdx ? () => this.remote.right() : () => this.remote.left();
 
-        await expect(button, 'Add to Favorites button is not visible.').toBeVisible();
-        await expect(button, 'Add to Favorites button is not focused.').toHaveAttribute(
-            'data-focused', 'true'
-        );
+    for (let s = 0; s < steps; s++) { await move(); }
+    const targetApp = categoryRow.getAppLocator(appName);
 
-        const text = await button.textContent();
+    await expect(targetApp).toHaveAttribute('data-focused', 'focused', { timeout: 10000 });
+  }
 
-        if (text === 'Add to Favourites') {
-            await this.remote.select();
-        } else if (text === 'Remove from Favourites') {
-            return;
-        } else {
-            throw new Error(`Unexpected favorite button state: "${text}"`);
-        }
+  async addFocusedAppToFavApps(categoryName, appName) {
+    const categoryRow = this.categories.getCategoryByName(categoryName);
+    const targetAppLocator = categoryRow.getAppLocator(appName);
 
-        await this.waitForSpaReady();
+    await this.remote.select(targetAppLocator);
 
-        await this.page.waitForURL(process.env.BASE_URL, { timeout: 20000 });
-    }
+    await expect(this.addToFavoritesButton).toBeVisible();
+    await this.remote.select(this.addToFavoritesButton);
 
-
-    async addAppToFavList(featureName, appName) {
-        await this.open();
-        await this.navigateToApp(featureName, appName);
-
-        await this.remote.select();
-
-        await this.addToFavoritesButton();
-    }
-
-
-    async getAppCoordinates(listContainer, categoryName, appName) {
-        const lists = listContainer.locator(
-            TITAN_OS_LOCATORS.LIST_ITEM_TESTID_PREFIX
-        );
-
-        const listsCount = await lists.count();
-        const targetCategory = categoryName.trim().toLowerCase();
-        const targetApp = appName.trim().toLowerCase();
-
-        for (let rIndex = 0; rIndex < listsCount; rIndex++) {
-            const list = lists.nth(rIndex);
-            const label = await list.getAttribute('aria-label');
-
-            if (label?.trim().toLowerCase() === targetCategory) {
-                const items = list.locator(
-                    TITAN_OS_LOCATORS.LIST_ITEM_ROLE
-                );
-                const itemsCount = await items.count();
-
-                for (let cIndex = 0; cIndex < itemsCount; cIndex++) {
-                    const testId = await items
-                        .nth(cIndex)
-                        .getAttribute('data-testid');
-
-                    if (testId?.trim().toLowerCase() === targetApp) {
-                        return { rowIndex: rIndex, colIndex: cIndex };
-                    }
-                }
-            }
-        }
-
-        return null;
-    }
-
-    async waitUntilAppsReady() {
-        await this.waitForSpaReady();
-
-        await expect(this.menuItem).toHaveAttribute('aria-selected', 'true');
-
-        const miniBanner = this.page.locator(TITAN_OS_LOCATORS.MINI_BANNER);
-        const items = miniBanner.locator('[role="listitem"]');
-
-        await expect
-            .poll(async () => await items.count(), {
-                timeout: 20000,
-                message: 'Mini banner did not render any items',
-            })
-            .toBeGreaterThan(0);
-    }
+    await Promise.race([
+      this.addToFavoritesButton.waitFor({ state: 'detached', timeout: 30000 }),
+      expect(this.addToFavoritesButton)
+        .toHaveAttribute('data-loading', 'false', { timeout: 30000 }),
+    ]);
+  }
 }

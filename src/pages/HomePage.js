@@ -1,115 +1,68 @@
-import { BasePage } from '../core/BasePage.js';
-import { TITAN_OS_LOCATORS } from '../locators/locators.js';
 import { expect } from '@playwright/test';
+import { BasePage } from './BasePage.js';
+import { FavAppListComponent } from '../components/HomePage/FavAppListComponent.js';
 
 export class HomePage extends BasePage {
-    /**
-     * @param {import('@playwright/test').Page} page
-     * @param {import('../core/BasePage.js').BasePage} [options]
-     */
-    constructor(page, options = {}) {
-        super(page, options);
+  /**
+   * @param {import('@playwright/test').Page} page
+   */
+  constructor(page) {
+    super(page);
+    this.favAppList = new FavAppListComponent(
+      this.page.locator('[data-testid="user-apps"]'),
+      this.page
+    );
+  }
 
-        this.menuItem = page.locator(TITAN_OS_LOCATORS.MENU_ITEM('Home'));
-        this.favList = page.locator(TITAN_OS_LOCATORS.FAVOURITE_APPS_CONTAINER);
-        this.favApp = (appName) => page.locator(TITAN_OS_LOCATORS.FAVORITE_APP(appName));
+  async open() {
+    await this.navigate('');
+    await this.isLoaded();
+  }
+
+  async isLoaded() {
+    await expect(this.favAppList.list()).toBeAttached();
+    await this.favAppList.waitForReady();
+    await expect(this.favAppList.appLocator('Watch TV')).toBeVisible();
+  }
+
+  async isAppInFavorites(appName) {
+    return await this.favAppList.exists(appName);
+  }
+
+  async focusFavApp(appName) {
+    const count = await this.favAppList.count();
+    if (count === 0) throw new Error('Favourite Apps row is empty.');
+
+    const current = await this.favAppList.focusedIndex();
+    if (current < 0) throw new Error('No focused item found in Favourite Apps row.');
+
+    const target = await this.favAppList.appIndex(appName);
+    if (target < 0) throw new Error(`Fav app "${appName}" not found in Favourite Apps row.`);
+
+    if (current === target) return;
+
+    const steps = Math.abs(target - current);
+    const move = target > current ? () => this.remote.right() : () => this.remote.left();
+
+    for (let s = 0; s < steps; s++) {
+      await move();
     }
 
-    async open() {
-        await this.goto('');
-        await this.waitForHomeReady();
-    }
+    await expect(this.favAppList.items().nth(target)).toHaveAttribute('data-focused', 'focused');
+  }
 
-    async waitForHomeReady() {
-        await this.waitForSpaReady();
-        await expect(this.menuItem).toHaveAttribute('aria-selected', 'true');
-        await expect(this.favList, 'Favorites container is not visible').toBeVisible();
+  async removeFocusedFavApp(appName) {
+    const listRoot = this.favAppList.list();
+    const appItemRoot = listRoot.locator(`[role="listitem"][data-testid="${appName}"]`);
+    const removeBtn = appItemRoot.locator('[data-testid="editmode-remove-app"]');
 
-        await expect
-            .poll(async () => await this.favList.count(), { timeout: 20000 })
-            .toBeGreaterThan(0);
+    await this.remote.longPressSelect(appItemRoot);
 
-        console.log('Home Page is ready');
-    }
+    await expect(removeBtn).toBeAttached({ timeout: 5000 });
 
-    async getFavoriteAppIndex(appName) {
-        const lists = this.favList.locator('[role="listitem"]');
-        const count = await lists.count();
+    await this.remote.down();
 
-        for (let colIndex = 0; colIndex < count; colIndex++) {
-            const element = lists.nth(colIndex);
-            const label = await element.getAttribute('aria-label');
-            if (label && label.trim().toLowerCase() === appName.trim().toLowerCase()) {
-                return colIndex;
-            }
-        }
-        return -1;
-    }
-
-    async isFavoritePresent(appName) {
-        await this.waitUntilFavListLoad();
-        return (await this.getFavoriteAppIndex(appName)) >= 0;
-    }
-
-    async navigateToAppInFavList(appName) {
-        const index = await this.getFavoriteAppIndex(appName);
-        if (index < 0) {
-            throw new Error(`Favorite app not found: ${appName}`);
-        }
-        await this.remote.right(index);
-    }
-
-
-    async removeFavorite(appName) {
-        await this.waitForHomeReady();
-        await this.navigateToAppInFavList(appName);
-
-        console.log(`Removing favorite: ${appName}`);
-        await this.remote.longPressSelect();
-
-        await this.remote.down();
-        await this.remote.select();
-
-        await this.waitForSpaReady();
-    }
-
-    async deleteAppFromFavlist(appName) {
-        await this.removeFavorite(appName);
-    }
-
-    async ensureAppNotExistInFavList(appName) {
-        await this.waitForHomeReady();
-        await this.waitUntilFavListLoad();
-
-        if (await this.isFavoritePresent(appName)) {
-            await this.removeFavorite(appName);
-        }
-        await this.expectAppNotExistInFavList(appName);
-    }
-
-    async waitUntilFavListLoad() {
-        await this.waitForHomeReady();
-        await expect(this.favApp("Watch TV"), 'Favorites container is not visible')
-            .toBeVisible();
-    }
-
-    async expectAppExistInFavList(appName) {
-        await this.waitForHomeReady();
-
-        await expect
-            .poll(async () => await this.getFavoriteAppIndex(appName), { timeout: 20000 })
-            .toBeGreaterThanOrEqual(1);
-
-        console.log(`Favorite exists: ${appName}`);
-    }
-
-    async expectAppNotExistInFavList(appName) {
-        await this.open();
-
-        await expect
-            .poll(async () => await this.getFavoriteAppIndex(appName), { timeout: 20000 })
-            .toBe(-1);
-
-        console.log(`Favorite absent: ${appName}`);
-    }
+    await expect(removeBtn).toHaveAttribute('data-focused', 'focused', { timeout: 3000 });
+    await this.remote.select(removeBtn);
+  }
 }
