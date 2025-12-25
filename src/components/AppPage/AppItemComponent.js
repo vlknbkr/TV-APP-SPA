@@ -1,4 +1,3 @@
-// src/components/AppItemComponent.js
 import { BaseComponent } from '../BasePage/BaseComponent';
 
 export class AppItemComponent extends BaseComponent {

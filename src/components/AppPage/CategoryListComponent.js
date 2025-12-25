@@ -1,11 +1,8 @@
-// src/components/CategoryListComponent.js
 import { BaseComponent } from '../BasePage/BaseComponent.js';
-import { CategoryAppItemComponent } from '../AppPage/CategoryAppItemComponent.js';
+import { CategoryAppItemComponent } from './CategoryAppItemComponent.js';
 
 export class CategoryListComponent extends BaseComponent {
-    /**
-     * root MUST be: page.locator('[data-testid="lists-container"]')
-     */
+
     constructor(root, page) {
         super(root, page);
 
@@ -57,9 +54,7 @@ export class CategoryListComponent extends BaseComponent {
         }, categoryName);
     }
 
-    /**
-     * Returns index of focused category row, -1 if none
-     */
+ 
     async focusedIndexCategory() {
         return this.getAllCategories().evaluateAll((els) => {
             return els.findIndex((el) => el.getAttribute('data-focused') === 'focused');

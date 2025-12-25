@@ -1,8 +1,6 @@
 import { RemoteControl } from '../utils/RemoteControl';
 
-
 export class BasePage {
-
 
   /**
    * @param {import('@playwright/test').Page} page

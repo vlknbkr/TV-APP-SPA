@@ -1,4 +1,3 @@
-// src/components/SearchPage/SearchBarComponent.js
 import { BaseComponent } from '../BasePage/BaseComponent.js';
 
 export class SearchBarComponent extends BaseComponent {
@@ -13,7 +12,6 @@ export class SearchBarComponent extends BaseComponent {
     super(root, page);
   }
 
-  // Lazy locators chained from this.root
   container() { return this.root.locator(SearchBarComponent.SELECTORS.container); }
   inputBox() { return this.container().locator(SearchBarComponent.SELECTORS.inputBox); }
   input() { return this.inputBox().locator(SearchBarComponent.SELECTORS.input); }

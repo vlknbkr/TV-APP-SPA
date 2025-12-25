@@ -1,4 +1,3 @@
-// src/components/HomePage/FavAppListComponent.js
 import { BaseComponent } from '../BasePage/BaseComponent.js';
 import { FavAppItemComponent } from './FavAppItemComponent.js';
 
@@ -14,17 +13,17 @@ export class FavAppListComponent extends BaseComponent {
 
   constructor(root, page) {
     super(root, page);
-    
-    this.listRoot = this.root.locator('#favourite-apps[role="list"]');
-    // 1. Initialize core locators in constructor to avoid undefined errors
-    this.listLocator = this.root.locator(FavAppListComponent.SELECTORS.list);
 
-    // We chain from this.listLocator to ensure we only find items inside this list
+    this.listRoot = this.root.locator('#favourite-apps[role="list"]');
+    this.listLocator = this.root.locator(FavAppListComponent
+      .SELECTORS.list);
+
     this.visibleListLocator = this.listLocator.filter({
       has: page.locator(FavAppListComponent.SELECTORS.visible)
     });
 
-    this.itemsLocator = this.visibleListLocator.locator(FavAppListComponent.SELECTORS.item);
+    this.itemsLocator = this.visibleListLocator.locator(FavAppListComponent
+      .SELECTORS.item);
   }
 
   list() {
@@ -45,12 +44,11 @@ export class FavAppListComponent extends BaseComponent {
   }
 
   appLocator(appName) {
-    return this.visibleListLocator.locator(`[role="listitem"][data-testid="${appName}"]`).first();
+    return this.visibleListLocator
+      .locator(`[role="listitem"][data-testid="${appName}"]`)
+      .first();
   }
 
-  /**
-   * Waits for the list to be visible and for the app to signal content is ready.
-   */
   async waitForReady() {
     await this.visibleListLocator.waitFor({ state: 'visible' });
   }

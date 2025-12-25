@@ -1,4 +1,3 @@
-// src/components/SearchPage/SearchResultsComponent.js
 import { expect } from '@playwright/test';
 import { BaseComponent } from '../BasePage/BaseComponent.js';
 
@@ -20,7 +19,6 @@ export class SearchResultsComponent extends BaseComponent {
   emptyState() { return this.container().locator(SearchResultsComponent.SELECTORS.emptyState); }
 
   async waitUntilResolved(timeout = 15000) {
-    // Wait until the container is actually rendered and visible
     await expect(this.container()).toHaveAttribute('data-visible', 'true', { timeout });
     
     await expect.poll(async () => {

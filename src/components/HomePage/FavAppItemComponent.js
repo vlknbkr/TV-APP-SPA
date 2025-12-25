@@ -1,4 +1,3 @@
-// src/components/FavAppItemComponent.js
 import { AppItemComponent } from '../AppPage/AppItemComponent.js';
 
 export class FavAppItemComponent extends AppItemComponent {
@@ -10,7 +9,8 @@ export class FavAppItemComponent extends AppItemComponent {
 
   constructor(root, page) {
     super(root, page);
-    this.removeButtonLocator = this.root.locator(FavAppItemComponent.SELECTORS.removeButton);
+    this.removeButtonLocator = this.root.locator(
+      FavAppItemComponent.SELECTORS.removeButton);
   }
 
   removeButton() {
@@ -18,9 +18,11 @@ export class FavAppItemComponent extends AppItemComponent {
   }
 
   async isRemoveDisabled() {
-    const focusState = await this.removeButtonLocator.getAttribute(FavAppItemComponent.SELECTORS.focusedAttr);
-    
-    if (focusState?.toLowerCase() === FavAppItemComponent.SELECTORS.disabledValue) {
+    const focusState = await this.removeButtonLocator
+      .getAttribute(FavAppItemComponent.SELECTORS.focusedAttr);
+
+    if (focusState?.toLowerCase() === FavAppItemComponent
+      .SELECTORS.disabledValue) {
       return true;
     }
 

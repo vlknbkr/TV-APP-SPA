@@ -17,11 +17,10 @@ export class ChannelInfoComponent {
   meta() { return this.switcher().locator(ChannelInfoComponent.SELECTORS.meta); }
 
   async isContentReady() {
-    return (await this.panel().getAttribute('data-content-ready')) === 'true'; //
+    return (await this.panel().getAttribute('data-content-ready')) === 'true';
   }
 
   async currentKey() {
-    // Extracts unique metadata from DOM
     const id = (await this.meta().getAttribute('data-channel-id'))?.trim() ?? '';
     const num = (await this.meta().getAttribute('data-channel-number'))?.trim() ?? '';
     const title = (await this.meta().getAttribute('data-channel-title'))?.trim() ?? '';

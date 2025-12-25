@@ -12,11 +12,10 @@ export class ChannelsMenuComponent {
   };
 
   constructor(root, page) {
-    this.root = root; // Consistent annotation
+    this.root = root;
     this.page = page;
   }
 
-  // Lazy locators
   menu() { return this.root.locator(ChannelsMenuComponent.SELECTORS.container); }
   group() { return this.menu().locator(ChannelsMenuComponent.SELECTORS.group); }
 
@@ -31,33 +30,30 @@ export class ChannelsMenuComponent {
     await expect(this.menu(), 'Channels menu content-ready should be true')
       .toHaveAttribute('data-content-ready', 'true');
   }
-  
+
   favoriteToggleButton() {
-    return this.menu().locator(`${ChannelsMenuComponent.SELECTORS.addBtn}, ${ChannelsMenuComponent.SELECTORS.deleteBtn}`);
+    return this.menu()
+      .locator(`${ChannelsMenuComponent.SELECTORS.addBtn}, ${ChannelsMenuComponent.SELECTORS.deleteBtn}`);
   }
 
   async getToggleAction() {
     const btn = this.favoriteToggleButton();
     const testId = await btn.getAttribute('data-testid');
-    // Returns 'add' or 'delete' based on the ID present
+
     return testId.includes('add') ? 'add' : 'delete';
   }
   async isClosed() {
     const transform = await this.group().evaluate(el => el.style.transform || '');
-    return transform.includes('translateX(-100%)'); // Matches DOM style
+    return transform.includes('translateX(-100%)');
   }
 
   async waitUntilOpen() {
     await this.waitUntilReady();
 
-    // Wait for the animation to move beyond the "closed" transform
     await expect.poll(() => this.isClosed(), {
       timeout: 15000,
       message: 'Channels menu animation did not start'
     }).toBe(false);
-
-    // Focus assertion removed from here to allow the Page Object 
-    // to handle the focus handover.
   }
 
   async waitUntilClosed() {

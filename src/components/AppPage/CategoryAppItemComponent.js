@@ -1,4 +1,3 @@
-// src/components/CategoryAppItemComponent.js
 import { BaseComponent } from '../BasePage/BaseComponent.js';
 import { AppItemComponent } from './AppItemComponent.js';
 
@@ -12,20 +11,16 @@ export class CategoryAppItemComponent extends BaseComponent {
 
     constructor(root, page) {
         super(root, page);
-        // Scoped to this category row
+
         this.groupLocator = this.root.locator(CategoryAppItemComponent.SELECTORS.group);
         this.itemsLocator = this.groupLocator.locator(CategoryAppItemComponent.SELECTORS.item);
     }
 
-    /**
-     * Finds an app locator within this category.
-     */
     appLocator(appName) {
         return this.groupLocator.locator(`[role="listitem"][data-testid="${appName}"]`).first();
     }
 
     getAppLocator(appName) {
-        console.log("appLocator: ", this.appLocator(appName));
         return this.appLocator(appName);
     }
 

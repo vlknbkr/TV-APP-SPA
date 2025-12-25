@@ -1,4 +1,3 @@
-// src/pages/AppsPage.js
 import { BasePage } from './BasePage.js';
 import { expect } from '@playwright/test';
 import { MiniBannerComponent } from '../components/AppPage/MiniBannerComponent.js';
@@ -26,13 +25,9 @@ export class AppsPage extends BasePage {
   }
 
   async isLoaded() {
-    // Check main container visibility
     await expect(this.categories.root).toBeVisible();
-
-    // Delegate lazy loading wait to the component
     await this.miniBanner.waitForLoaded();
 
-    // Final validation: ensure at least one banner item exists
     const count = await this.miniBanner.getCount();
     expect(count).toBeGreaterThan(0);
   }
@@ -43,7 +38,6 @@ export class AppsPage extends BasePage {
 
     let currentIdx = await this.categories.focusedIndexCategory();
 
-    // Bring focus into the list if currently on header/banner
     for (let i = 0; i < 5 && currentIdx < 0; i++) {
       await this.remote.down();
       currentIdx = await this.categories.focusedIndexCategory();
@@ -71,22 +65,15 @@ export class AppsPage extends BasePage {
     for (let s = 0; s < steps; s++) { await move(); }
     const targetApp = categoryRow.getAppLocator(appName);
 
-    console.log(" appName: ", appName);
-    console.log("targetApp: ", targetApp);
-
     await expect(targetApp).toHaveAttribute('data-focused', 'focused', { timeout: 10000 });
   }
 
   async addFocusedAppToFavApps(categoryName, appName) {
-    // 1. Get the category row component instance
     const categoryRow = this.categories.getCategoryByName(categoryName);
     const targetAppLocator = categoryRow.getAppLocator(appName);
 
-    // 2. Select the app to open its details/context menu
     await this.remote.select(targetAppLocator);
 
-    // 3. Select the "Add to Favorites" button
-    // Ensure the button is actually visible and enabled before clicking
     await expect(this.addToFavoritesButton).toBeVisible();
     await this.remote.select(this.addToFavoritesButton);
 

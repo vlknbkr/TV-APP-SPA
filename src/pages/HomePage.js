@@ -1,7 +1,6 @@
 import { expect } from '@playwright/test';
 import { BasePage } from './BasePage.js';
 import { FavAppListComponent } from '../components/HomePage/FavAppListComponent.js';
-import { FavAppItemComponent } from '../components/HomePage/FavAppItemComponent.js';
 
 export class HomePage extends BasePage {
   /**
@@ -21,13 +20,8 @@ export class HomePage extends BasePage {
   }
 
   async isLoaded() {
-    // 1. Wait for the list container to exist
     await expect(this.favAppList.list()).toBeAttached();
-
-    // 2. Wait for data-content-ready="true" and aria-hidden="false"
     await this.favAppList.waitForReady();
-
-    // 3. Confirm target app is visible (Watch TV is a good smoke test)
     await expect(this.favAppList.appLocator('Watch TV')).toBeVisible();
   }
 
@@ -53,23 +47,18 @@ export class HomePage extends BasePage {
     await expect(this.favAppList.items().nth(target)).toHaveAttribute('data-focused', 'focused');
   }
 
-
   async removeFocusedFavApp(appName) {
-    // Use a locator that ignores the aria-hidden state of the list
-    const listRoot = this.favAppList.list(); // locator('#favourite-apps')
+    const listRoot = this.favAppList.list();
     const appItemRoot = listRoot.locator(`[role="listitem"][data-testid="${appName}"]`);
     const removeBtn = appItemRoot.locator('[data-testid="editmode-remove-app"]');
 
-    // 1. Enter Edit Mode
     await this.remote.longPressSelect(appItemRoot);
 
-    // 2. Wait for the button to attach (it exists now because we aren't filtering out aria-hidden="true")
     await expect(removeBtn).toBeAttached({ timeout: 5000 });
 
-    // 3. Navigate and Select
     await this.remote.down();
+
     await expect(removeBtn).toHaveAttribute('data-focused', 'focused', { timeout: 3000 });
     await this.remote.select(removeBtn);
-
   }
 }

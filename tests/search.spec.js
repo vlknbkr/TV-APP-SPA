@@ -1,4 +1,3 @@
-// tests/search.spec.js
 import { test, expect } from '../src/fixtures/fixtures.js';
 
 test.describe('Search', () => {
